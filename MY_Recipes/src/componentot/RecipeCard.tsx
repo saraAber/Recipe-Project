@@ -25,7 +25,7 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material"
-import { AccessTime as AccessTimeIcon, Edit as EditIcon, Delete as DeleteIcon, Category as CategoryIcon } from "@mui/icons-material"
+import { AccessTime as AccessTimeIcon, Edit as EditIcon, Delete as DeleteIcon, Category as CategoryIcon, Person as PersonIcon } from "@mui/icons-material"
 
 interface Ingredient {
   Id: number
@@ -78,14 +78,9 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      // חשוב - שליחת אובייקט עם שדה Id במבנה הנכון
       const response = await axios.post(`http://localhost:8080/api/recipe/delete/${recipe.Id}`, { Id: recipe.Id });
       console.log("תגובת השרת למחיקה:", response.data);
-
-      // הודעת הצלחה
       alert("המתכון נמחק בהצלחה");
-
-      // רענון הדף (עם reload) כדי להציג את הרשימה המעודכנת
       window.location.reload();
     } catch (error) {
       console.error("Error deleting recipe:", error);
@@ -110,10 +105,9 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
 
   const isOwner = user?.Id === recipe.UserId
 
-  // בחירת קטגוריה להצגה במתכון
   const categoryToShow = recipe.Categoryid || recipe.clientCategoryid
   const categoryName = categoryToShow && categories.length > 0
-    ? categories.find(cat => cat.Id === categoryToShow)?.Name || "קטגוריה לא מוגדרת"
+    ? categories.find(cat => cat.Id === categoryToShow)?.Name || "ללא קטגוריה"
     : "ללא קטגוריה"
 
   return (
@@ -122,47 +116,58 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        transition: "all 0.3s",
+        transition: "all 0.3s ease",
         "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: 3,
+          transform: "translateY(-6px)",
+          boxShadow: 6,
         },
-        borderRadius: 2,
+        borderRadius: 3,
         overflow: "hidden",
+        position: "relative",
       }}
     >
-      <Box sx={{ position: "relative" }}>
+      <Box sx={{ position: "relative", paddingTop: "60%" }}>
         <CardMedia
           component="img"
-          height="180"
           image={recipe.Img || "https://via.placeholder.com/400x300?text=Recipe+Image"}
           alt={recipe.Name}
-          sx={{ objectFit: "cover" }}
+          sx={{ 
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover" 
+          }}
         />
         <Chip
           label={recipe.Difficulty}
           size="small"
           sx={{
             position: "absolute",
-            top: 8,
-            right: 8,
-            bgcolor: "rgba(255, 255, 255, 0.9)",
-            fontWeight: "medium",
+            top: 12,
+            right: 12,
+            bgcolor: "rgba(255, 255, 255, 0.95)",
+            fontWeight: "bold",
+            borderRadius: 2,
           }}
         />
       </Box>
 
-      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+      <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
         <Typography
           variant="h6"
           component="h3"
-          gutterBottom
           sx={{
             fontWeight: "bold",
+            mb: 1,
+            fontSize: "1.1rem",
+            lineHeight: 1.3,
+            minHeight: "40px",
             overflow: "hidden",
             textOverflow: "ellipsis",
             display: "-webkit-box",
-            WebkitLineClamp: 1,
+            WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             cursor: "pointer"
           }}
@@ -170,30 +175,38 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
         >
           {recipe.Name}
         </Typography>
-     
-        <Typography variant="caption" color="text.secondary">
-          משתמש: {recipe.UserId}
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", color: "text.secondary", mb: 1 }}>
-          <AccessTimeIcon sx={{ fontSize: 18, mr: 0.5 }} />
-          <Typography variant="body2">{recipe.Duration} דקות</Typography>
+
+        <Box sx={{ display: "flex", gap: 2, mb: 1.5, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <PersonIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+            <Typography variant="caption" color="text.secondary">
+              משתמש {recipe.UserId}
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <AccessTimeIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+            <Typography variant="caption" color="text.secondary">
+              {recipe.Duration} דקות
+            </Typography>
+          </Box>
         </Box>
 
         {categories && categories.length > 0 && (
-          <Box sx={{ display: "flex", alignItems: "center", color: "text.secondary", mb: 1 }}>
-            <CategoryIcon sx={{ fontSize: 18, mr: 0.5 }} />
-            <Typography variant="body2">
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1.5 }}>
+            <CategoryIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+            <Typography variant="caption" color="text.secondary">
               {categoryName}
-              {isOwner && onCategoryChange && (
-                <IconButton
-                  size="small"
-                  onClick={handleCategoryDialogOpen}
-                  sx={{ ml: 1, p: 0 }}
-                >
-                  <EditIcon fontSize="inherit" />
-                </IconButton>
-              )}
             </Typography>
+            {isOwner && onCategoryChange && (
+              <IconButton
+                size="small"
+                onClick={handleCategoryDialogOpen}
+                sx={{ p: 0.5, ml: 0.5 }}
+              >
+                <EditIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            )}
           </Box>
         )}
 
@@ -207,13 +220,15 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
+            minHeight: "40px",
+            lineHeight: 1.5,
           }}
         >
           {recipe.Description}
         </Typography>
 
-        <Box sx={{ mb: 1 }}>
-          <Typography variant="body2" sx={{ fontWeight: "medium", mb: 0.5 }}>
+        <Box>
+          <Typography variant="caption" sx={{ fontWeight: "medium", mb: 0.5, display: "block" }}>
             מרכיבים:
           </Typography>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
@@ -223,7 +238,11 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
                 label={ingredient.Name}
                 size="small"
                 variant="outlined"
-                sx={{ bgcolor: "background.paper" }}
+                sx={{ 
+                  bgcolor: "background.paper",
+                  height: "24px",
+                  fontSize: "0.75rem" 
+                }}
               />
             ))}
             {recipe.Ingridents && recipe.Ingridents.length > 3 && (
@@ -231,25 +250,62 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
                 label={`+${recipe.Ingridents.length - 3}`}
                 size="small"
                 variant="outlined"
-                sx={{ bgcolor: "background.paper" }}
+                sx={{ 
+                  bgcolor: "#FFF3E0",
+                  height: "24px",
+                  fontSize: "0.75rem" 
+                }}
               />
             )}
           </Box>
         </Box>
       </CardContent>
 
-      <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 2 }}>
-        <Button size="small" onClick={() => navigate(`/DetailRecipe/${recipe.Id}`)} sx={{ color: "#FFB74D" }}>
+      <CardActions sx={{ 
+        justifyContent: "space-between", 
+        px: 2.5, 
+        pb: 2,
+        pt: 0 
+      }}>
+        <Button 
+          size="small" 
+          onClick={() => navigate(`/DetailRecipe/${recipe.Id}`)} 
+          sx={{ 
+            color: "#FFB74D",
+            fontWeight: "medium",
+            "&:hover": {
+              bgcolor: "#FFF3E0",
+            }
+          }}
+        >
           צפייה במתכון
         </Button>
 
         {isOwner && (
           <Box>
-            <IconButton size="small" onClick={() => navigate(`/editRecipe/${recipe.Id}`)} sx={{ mr: 1 }}>
+            <IconButton 
+              size="small" 
+              onClick={() => navigate(`/editRecipe/${recipe.Id}`)} 
+              sx={{ 
+                mr: 0.5,
+                "&:hover": {
+                  bgcolor: "#E8F5E9",
+                }
+              }}
+            >
               <EditIcon fontSize="small" />
             </IconButton>
 
-            <IconButton size="small" onClick={() => setDeleteDialogOpen(true)} sx={{ color: "error.main" }}>
+            <IconButton 
+              size="small" 
+              onClick={() => setDeleteDialogOpen(true)} 
+              sx={{ 
+                color: "error.main",
+                "&:hover": {
+                  bgcolor: "#FFEBEE",
+                }
+              }}
+            >
               <DeleteIcon fontSize="small" />
             </IconButton>
           </Box>

@@ -66,6 +66,7 @@ const RecipesPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<number | "all">("all")
   const [selectedUserId, setSelectedUserId] = useState<number | "all">("all")
+  const [selectedDuration, setSelectedDuration] = useState<string>("all")
 
   // מאגר זיכרון מקומי למיפוי מתכונים לקטגוריות
   const recipeCategoriesMapRef = useRef<Map<number, number>>(new Map())
@@ -145,7 +146,25 @@ const RecipesPage: React.FC = () => {
       // פילטור לפי userId
       const userIdMatch = selectedUserId === "all" || recipe.UserId === selectedUserId
 
-      return nameMatch && difficultyMatch && categoryMatch && userIdMatch
+      // פילטור לפי זמן הכנה
+      const durationMatch = (() => {
+        if (selectedDuration === "all") return true
+        
+        switch (selectedDuration) {
+          case "15":
+            return recipe.Duration <= 15
+          case "30":
+            return recipe.Duration > 15 && recipe.Duration <= 30
+          case "60":
+            return recipe.Duration > 30 && recipe.Duration <= 60
+          case "60+":
+            return recipe.Duration > 60
+          default:
+            return true
+        }
+      })()
+
+      return nameMatch && difficultyMatch && categoryMatch && userIdMatch && durationMatch
     }
   )
 
@@ -266,6 +285,22 @@ const RecipesPage: React.FC = () => {
               ))}
             </Select>
           </FormControl>
+
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel id="duration-select-label">סינון לפי זמן הכנה</InputLabel>
+            <Select
+              labelId="duration-select-label"
+              value={selectedDuration}
+              onChange={(e) => setSelectedDuration(e.target.value)}
+              label="סינון לפי זמן הכנה"
+            >
+              <MenuItem value="all">כל הזמנים</MenuItem>
+              <MenuItem value="15">עד 15 דקות</MenuItem>
+              <MenuItem value="30">16-30 דקות</MenuItem>
+              <MenuItem value="60">31-60 דקות</MenuItem>
+              <MenuItem value="60+">מעל 60 דקות</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
 
         {loading ? (
@@ -300,7 +335,18 @@ const RecipesPage: React.FC = () => {
             </Button>
           </Card>
         ) : (
-          <Grid container spacing={3}>
+          <Grid 
+            container 
+            spacing={3}
+            sx={{
+              '& .MuiGrid-item': {
+                display: 'flex',
+                '& > *': {
+                  flex: 1,
+                }
+              }
+            }}
+          >
             {filteredRecipes.map((recipe) => (
               <Grid item xs={12} sm={6} md={4} key={recipe.Id.toString()}>
                 {categories && categories.length > 0 ? (
