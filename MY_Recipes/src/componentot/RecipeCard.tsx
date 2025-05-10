@@ -71,7 +71,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
   const [selectedCategoryid, setSelectedCategoryid] = useState<number | "">(() => {
     return recipe.Categoryid || recipe.clientCategoryid || ""
   })
-  
+
   const navigate = useNavigate()
   const { user } = useUser()
 
@@ -81,10 +81,10 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
       // חשוב - שליחת אובייקט עם שדה Id במבנה הנכון
       const response = await axios.post(`http://localhost:8080/api/recipe/delete/${recipe.Id}`, { Id: recipe.Id });
       console.log("תגובת השרת למחיקה:", response.data);
-      
+
       // הודעת הצלחה
       alert("המתכון נמחק בהצלחה");
-      
+
       // רענון הדף (עם reload) כדי להציג את הרשימה המעודכנת
       window.location.reload();
     } catch (error) {
@@ -95,12 +95,12 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
       setDeleteDialogOpen(false);
     }
   };
-  
+
   const handleCategoryDialogOpen = () => {
     setSelectedCategoryid(recipe.Categoryid || recipe.clientCategoryid || "")
     setCategoryDialogOpen(true)
   }
-  
+
   const handleCategoryChange = () => {
     if (selectedCategoryid !== "" && onCategoryChange) {
       onCategoryChange(recipe.Id, Number(selectedCategoryid))
@@ -109,7 +109,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
   }
 
   const isOwner = user?.Id === recipe.UserId
-  
+
   // בחירת קטגוריה להצגה במתכון
   const categoryToShow = recipe.Categoryid || recipe.clientCategoryid
   const categoryName = categoryToShow && categories.length > 0
@@ -170,20 +170,23 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
         >
           {recipe.Name}
         </Typography>
-
+     
+        <Typography variant="caption" color="text.secondary">
+          משתמש: {recipe.UserId}
+        </Typography>
         <Box sx={{ display: "flex", alignItems: "center", color: "text.secondary", mb: 1 }}>
           <AccessTimeIcon sx={{ fontSize: 18, mr: 0.5 }} />
           <Typography variant="body2">{recipe.Duration} דקות</Typography>
         </Box>
-        
+
         {categories && categories.length > 0 && (
           <Box sx={{ display: "flex", alignItems: "center", color: "text.secondary", mb: 1 }}>
             <CategoryIcon sx={{ fontSize: 18, mr: 0.5 }} />
             <Typography variant="body2">
               {categoryName}
               {isOwner && onCategoryChange && (
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={handleCategoryDialogOpen}
                   sx={{ ml: 1, p: 0 }}
                 >
@@ -266,7 +269,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, categories = [],
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* דיאלוג עריכת קטגוריה */}
       {onCategoryChange && (
         <Dialog open={categoryDialogOpen} onClose={() => setCategoryDialogOpen(false)}>

@@ -48,7 +48,6 @@ interface Recipe {
   Description: string
   Ingridents: Ingredient[]
   Instructions: Instruction[]
-  
   // מאפיין חדש שנוסיף בצד הלקוח
   clientCategoryid?: number | null
 }
@@ -66,7 +65,8 @@ const RecipesPage: React.FC = () => {
   const [difficulty, setDifficulty] = useState<string>("all")
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<number | "all">("all")
-  
+  const [selectedUserId, setSelectedUserId] = useState<number | "all">("all")
+
   // מאגר זיכרון מקומי למיפוי מתכונים לקטגוריות
   const recipeCategoriesMapRef = useRef<Map<number, number>>(new Map())
 
@@ -80,7 +80,7 @@ const RecipesPage: React.FC = () => {
           axios.get("http://localhost:8080/api/recipe"),
           axios.get("http://localhost:8080/api/category"),
         ])
-        
+
         // הוסף קטגוריה מקומית למתכונים אם אין להם קטגוריה בשרת
         const recipesWithClientCategories = recipesRes.data.map((recipe: Recipe) => {
           // אם יש למתכון קטגוריה בשרת, השתמש בה
@@ -88,7 +88,7 @@ const RecipesPage: React.FC = () => {
             recipeCategoriesMapRef.current.set(recipe.Id, recipe.Categoryid)
             return recipe
           }
-          
+
           // אם לא, בדוק אם יש מיפוי מקומי שמרנו קודם
           const savedCategoryid = recipeCategoriesMapRef.current.get(recipe.Id)
           return {
@@ -96,7 +96,7 @@ const RecipesPage: React.FC = () => {
             clientCategoryid: savedCategoryid || null
           }
         })
-        
+
         setRecipes(recipesWithClientCategories)
         setCategories(categoriesRes.data)
       } catch (error) {
@@ -111,14 +111,14 @@ const RecipesPage: React.FC = () => {
   }, [])
 
   // פונקציה לשמירת קטגוריה מקומית למתכון
-  const saveRecipeCategory = (recipeId: number, categoryid: number) => {
-    recipeCategoriesMapRef.current.set(recipeId, categoryid)
-    
+  const saveRecipeCategory = (recipeId: number, categoryId: number) => {
+    recipeCategoriesMapRef.current.set(recipeId, categoryId)
+
     // עדכון המתכונים בממשק
-    setRecipes(prevRecipes => 
-      prevRecipes.map(recipe => 
-        recipe.Id === recipeId 
-          ? { ...recipe, clientCategoryid: categoryid } 
+    setRecipes(prevRecipes =>
+      prevRecipes.map(recipe =>
+        recipe.Id === recipeId
+          ? { ...recipe, clientCategoryid: categoryId }
           : recipe
       )
     )
@@ -132,17 +132,20 @@ const RecipesPage: React.FC = () => {
     (recipe) => {
       // פילטור לפי שם
       const nameMatch = recipe.Name.toLowerCase().includes(searchTerm.toLowerCase())
-      
+
       // פילטור לפי רמת קושי
       const difficultyMatch = difficulty === "all" || recipe.Difficulty === difficulty
-      
+
       // פילטור לפי קטגוריה, בדיקה גם לקטגוריה בשרת וגם לקטגוריה מקומית
-      const categoryMatch = 
-        selectedCategory === "all" || 
-        recipe.Categoryid === selectedCategory || 
+      const categoryMatch =
+        selectedCategory === "all" ||
+        recipe.Categoryid === selectedCategory ||
         recipe.clientCategoryid === selectedCategory
-      
-      return nameMatch && difficultyMatch && categoryMatch
+
+      // פילטור לפי userId
+      const userIdMatch = selectedUserId === "all" || recipe.UserId === selectedUserId
+
+      return nameMatch && difficultyMatch && categoryMatch && userIdMatch
     }
   )
 
@@ -229,8 +232,8 @@ const RecipesPage: React.FC = () => {
           </Tabs>
         </Box>
 
-        <Box sx={{ mb: 4, maxWidth: 250 }}>
-          <FormControl fullWidth>
+        <Box sx={{ mb: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <FormControl sx={{ minWidth: 200 }}>
             <InputLabel id="category-select-label">סינון לפי קטגוריה</InputLabel>
             <Select
               labelId="category-select-label"
@@ -243,6 +246,23 @@ const RecipesPage: React.FC = () => {
               <MenuItem value="all">כל הקטגוריות</MenuItem>
               {categories.map((cat) => (
                 <MenuItem key={cat.Id} value={cat.Id}>{cat.Name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel id="user-select-label">סינון לפי משתמש</InputLabel>
+            <Select
+              labelId="user-select-label"
+              value={selectedUserId}
+              onChange={(e) =>
+                setSelectedUserId(e.target.value === "all" ? "all" : Number(e.target.value))
+              }
+              label="סינון לפי משתמש"
+            >
+              <MenuItem value="all">כל המשתמשים</MenuItem>
+              {[...new Set(recipes.map(recipe => recipe.UserId))].map((userId) => (
+                <MenuItem key={userId} value={userId}>משתמש {userId}</MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -284,7 +304,7 @@ const RecipesPage: React.FC = () => {
             {filteredRecipes.map((recipe) => (
               <Grid item xs={12} sm={6} md={4} key={recipe.Id.toString()}>
                 {categories && categories.length > 0 ? (
-                  <RecipeCard 
+                  <RecipeCard
                     recipe={recipe}
                     categories={categories}
                     onCategoryChange={saveRecipeCategory}
